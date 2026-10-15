@@ -1,0 +1,1315 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#162522">
+  <title>深中单元篮球经理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #162522;
+      --muted: #71807a;
+      --paper: #f3f4ef;
+      --panel: #fffefa;
+      --line: #e5e8e0;
+      --green: #316d55;
+      --green-dark: #245541;
+      --lime: #d5ed84;
+      --orange: #e88855;
+      --yellow: #f1c45a;
+      --red: #b65b48;
+      --shadow: 0 12px 35px rgba(30, 47, 39, .06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+    }
+    button { color: inherit; font: inherit; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; padding: 27px 17px 20px;
+      display: flex; flex-direction: column; color: #e8eee5; background: var(--ink);
+    }
+    .brand { display: flex; gap: 12px; align-items: center; padding: 0 9px 27px; }
+    .brand-mark {
+      width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto;
+      border-radius: 13px; color: var(--ink); background: var(--lime); font-weight: 900; font-size: 19px;
+    }
+    .brand-title { font-family: Georgia, "Songti SC", serif; font-weight: 700; font-size: 17px; line-height: 1.35; }
+    .brand-sub { margin-top: 3px; color: #9eaaa0; font-size: 10px; letter-spacing: 1.2px; }
+    .side-label { padding: 0 11px; margin: 12px 0 9px; color: #87958b; font-size: 10px; letter-spacing: 1.6px; }
+    .nav-list { display: grid; gap: 5px; }
+    .nav-button {
+      min-height: 43px; width: 100%; padding: 0 12px; display: flex; align-items: center; gap: 11px;
+      border: 0; border-radius: 8px; text-align: left; color: #b6c1b8; background: transparent; cursor: pointer;
+      transition: background .16s ease, color .16s ease, transform .16s ease;
+    }
+    .nav-button:hover { color: white; background: #24352f; }
+    .nav-button:active { transform: translateY(1px); }
+    .nav-button.active { color: var(--ink); background: var(--lime); font-weight: 700; }
+    .nav-glyph { width: 21px; text-align: center; font-size: 16px; }
+    .side-spacer { flex: 1; }
+    .club-card { padding: 15px 14px; border: 1px solid #35463e; border-radius: 9px; background: #1d3029; }
+    .club-kicker { color: #a7b8aa; font-size: 10px; letter-spacing: 1.2px; }
+    .club-name { margin-top: 7px; font-family: Georgia, "Songti SC", serif; font-size: 20px; font-weight: 700; }
+    .club-meta { margin-top: 8px; color: #afbbb0; font-size: 11px; }
+    .club-meta strong { color: var(--lime); font-weight: 600; }
+    .main { min-width: 0; }
+    .topbar {
+      height: 70px; padding: 0 39px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #e5e8e0; background: rgba(255, 254, 250, .78);
+    }
+    .season-label { color: var(--muted); font-size: 12px; }
+    .season-label strong { margin-left: 8px; color: var(--ink); font-size: 13px; }
+    .save-state { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+    .save-dot { width: 7px; height: 7px; border-radius: 50%; background: #68a678; }
+    .content { width: min(1240px, 100%); margin: auto; padding: 33px 39px 60px; }
+    .page-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 25px; }
+    .eyebrow { color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; }
+    h1 { margin: 8px 0 0; font-family: Georgia, "Songti SC", serif; font-size: clamp(27px, 3vw, 36px); line-height: 1.13; letter-spacing: 0; }
+    .heading-note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .date-chip { flex: 0 0 auto; padding: 9px 12px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: var(--panel); font-size: 11px; }
+    .date-chip strong { color: var(--ink); }
+    .view { display: none; animation: rise .28s ease both; }
+    .view.active { display: block; }
+    @keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .9fr); gap: 17px; }
+    .hero-panel {
+      position: relative; overflow: hidden; min-height: 238px; padding: 27px 29px; border-radius: 10px;
+      color: #f6f4e9; background: linear-gradient(118deg, #234c3d 0%, #316d55 65%, #3e7959 100%);
+    }
+    .hero-panel::after { content: ""; position: absolute; width: 230px; height: 230px; right: -33px; bottom: -111px; border: 1px solid rgba(222, 241, 181, .27); border-radius: 50%; box-shadow: 0 0 0 18px rgba(222, 241, 181, .04), 0 0 0 39px rgba(222, 241, 181, .04); }
+    .hero-panel::before { content: ""; position: absolute; width: 120px; height: 120px; right: 16px; bottom: -58px; border: 1px solid rgba(222, 241, 181, .32); border-radius: 50%; }
+    .hero-kicker { position: relative; z-index: 1; color: #d1e2c8; font-size: 10px; letter-spacing: 1.7px; }
+    .hero-title { position: relative; z-index: 1; margin-top: 18px; font-family: Georgia, "Songti SC", serif; font-size: 28px; font-weight: 700; }
+    .hero-copy { position: relative; z-index: 1; max-width: 390px; margin-top: 9px; color: #d5e0d3; font-size: 12px; line-height: 1.75; }
+    .hero-bottom { position: relative; z-index: 1; margin-top: 22px; display: flex; align-items: center; gap: 15px; }
+    .hero-button, .primary-button {
+      min-height: 39px; padding: 0 15px; border: 0; border-radius: 6px; color: var(--ink); background: var(--lime);
+      font-size: 12px; font-weight: 800; cursor: pointer; transition: filter .15s ease, transform .15s ease;
+    }
+    .hero-button:hover, .primary-button:hover { filter: brightness(.96); transform: translateY(-1px); }
+    .hero-context { color: #d3ded4; font-size: 11px; }
+    .quick-stats { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+    .stat-card { padding: 18px 19px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); box-shadow: var(--shadow); }
+    .stat-card-label { color: var(--muted); font-size: 11px; }
+    .stat-card-value { display: flex; align-items: baseline; gap: 8px; margin-top: 9px; }
+    .stat-card-value strong { font-family: Georgia, serif; font-size: 28px; }
+    .stat-card-value span { color: var(--muted); font-size: 11px; }
+    .stat-foot { margin-top: 5px; color: var(--green); font-size: 10px; }
+    .section-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 29px 0 12px; }
+    .section-title { margin: 0; font-family: Georgia, "Songti SC", serif; font-size: 17px; }
+    .text-button { padding: 4px 0; border: 0; color: var(--green); background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .text-button:hover { color: var(--green-dark); text-decoration: underline; }
+    .next-match { display: grid; grid-template-columns: minmax(115px, .7fr) 1.2fr minmax(130px, .7fr) auto; align-items: center; gap: 15px; padding: 14px 17px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .match-date { color: var(--muted); font-size: 10px; }
+    .match-date strong { display: block; margin-top: 4px; color: var(--ink); font-size: 13px; }
+    .match-title { font-size: 13px; font-weight: 750; }
+    .match-type { margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .match-opponent { color: var(--muted); font-size: 11px; }
+    .match-opponent strong { display: block; margin-top: 4px; color: var(--ink); font-family: Georgia, serif; font-size: 17px; }
+    .lineup-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+    .lineup-person { display: flex; align-items: center; gap: 9px; padding: 11px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+    .avatar { width: 31px; height: 31px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--green-dark); background: #e4edcf; font-family: Georgia, serif; font-weight: 700; }
+    .person-name { overflow: hidden; font-size: 11px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .person-role { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .panel { border: 1px solid var(--line); border-radius: 9px; background: var(--panel); box-shadow: var(--shadow); }
+    .panel-head { padding: 17px 19px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
+    .panel-sub { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 10px 12px; color: var(--muted); font-size: 9px; font-weight: 700; white-space: nowrap; }
+    td { padding: 11px 12px; border-top: 1px solid #edf0e9; font-size: 11px; white-space: nowrap; }
+    .roster-table th:first-child, .roster-table td:first-child { padding-left: 19px; }
+    .roster-table th:last-child, .roster-table td:last-child { padding-right: 19px; }
+    .player-cell { display: flex; align-items: center; gap: 8px; }
+    .player-cell .avatar { width: 29px; height: 29px; font-size: 11px; }
+    .jersey { color: var(--muted); font-size: 9px; }
+    .starter-toggle { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); background: white; cursor: pointer; }
+    .starter-toggle.selected { border-color: var(--green); color: white; background: var(--green); }
+    .overall { color: var(--green-dark); font-weight: 800; }
+    .attribute-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+    .attribute-card { padding: 17px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .attribute-card h3 { margin: 0 0 12px; font-size: 11px; }
+    .attribute-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid #edf0e9; }
+    .attribute-item span { color: #56645d; font-size: 10px; }
+    .attribute-control { display: flex; align-items: center; gap: 7px; }
+    .attribute-control strong { min-width: 21px; text-align: center; font-size: 11px; }
+    .tiny-button { width: 25px; height: 25px; border: 1px solid var(--line); border-radius: 5px; color: var(--green-dark); background: white; cursor: pointer; }
+    .tiny-button:disabled { color: #bfc7c0; cursor: not-allowed; }
+    .player-select { min-width: 170px; min-height: 35px; padding: 0 9px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: white; font: inherit; font-size: 11px; }
+    .point-badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 5px; color: #705012; background: #fff0c7; font-size: 10px; font-weight: 800; }
+    .schedule-list { display: grid; }
+    .schedule-row { min-height: 69px; display: grid; grid-template-columns: 115px minmax(0, 1fr) minmax(100px, .6fr) auto; align-items: center; gap: 14px; padding: 10px 18px; border-top: 1px solid #edf0e9; }
+    .schedule-row:first-child { border-top: 0; }
+    .schedule-day { color: var(--muted); font-size: 10px; }
+    .schedule-day strong { display: block; margin-top: 4px; color: var(--ink); font-size: 12px; }
+    .schedule-teams { font-size: 12px; font-weight: 750; }
+    .schedule-teams .versus { padding: 0 7px; color: #9ba69e; font-size: 9px; font-weight: 500; }
+    .schedule-status { color: var(--muted); font-size: 10px; }
+    .result-score { color: var(--green-dark); font-weight: 800; font-size: 12px; }
+    .small-button { min-height: 32px; padding: 0 11px; border: 1px solid var(--green); border-radius: 5px; color: var(--green-dark); background: white; font-size: 10px; font-weight: 750; cursor: pointer; }
+    .small-button:hover { color: white; background: var(--green); }
+    .small-button:disabled { border-color: var(--line); color: #aab4ab; background: #f5f6f2; cursor: not-allowed; }
+    .pill { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 4px; color: #607267; background: #edf1e8; font-size: 9px; font-weight: 750; }
+    .group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .group-panel { overflow: hidden; }
+    .group-title { padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+    .group-title strong { font-family: Georgia, serif; font-size: 14px; }
+    .group-title span { color: var(--muted); font-size: 9px; }
+    .standings th, .standings td { padding: 9px 10px; }
+    .standings th:first-child, .standings td:first-child { padding-left: 15px; }
+    .standings th:last-child, .standings td:last-child { padding-right: 15px; }
+    .qualified-row td:first-child { color: var(--green); font-weight: 800; }
+    .group-matches { margin-top: 18px; }
+    .round-title { margin: 21px 0 9px; display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .5px; }
+    .round-title::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+    .empty-state { padding: 32px 20px; color: var(--muted); text-align: center; font-size: 11px; line-height: 1.7; }
+    .log-list { display: grid; }
+    .log-row { display: grid; grid-template-columns: 80px minmax(0, 1fr) 100px auto; align-items: center; gap: 14px; padding: 13px 17px; border-top: 1px solid #edf0e9; }
+    .log-row:first-child { border-top: 0; }
+    .log-date { color: var(--muted); font-size: 10px; }
+    .log-game { font-size: 11px; font-weight: 750; }
+    .log-game small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 400; }
+    .log-score { color: var(--green-dark); font-family: Georgia, serif; font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .cup-note { margin: 15px 0 0; padding: 12px 14px; border-left: 3px solid var(--yellow); color: #657168; background: #fff8e6; font-size: 10px; line-height: 1.7; }
+    .log-empty { padding: 25px; color: var(--muted); text-align: center; font-size: 11px; }
+    dialog { width: min(760px, calc(100vw - 28px)); max-height: 88vh; padding: 0; overflow: auto; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--panel); box-shadow: 0 25px 80px rgba(13, 30, 23, .25); }
+    dialog::backdrop { background: rgba(14, 27, 22, .55); backdrop-filter: blur(2px); }
+    .dialog-head { padding: 20px 22px; display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; color: white; background: var(--green-dark); }
+    .dialog-kicker { color: #c0d6c1; font-size: 9px; letter-spacing: 1.3px; }
+    .dialog-title { margin-top: 7px; font-family: Georgia, "Songti SC", serif; font-size: 22px; font-weight: 700; }
+    .dialog-sub { margin-top: 5px; color: #d2e0d4; font-size: 10px; }
+    .close-button { width: 30px; height: 30px; border: 1px solid rgba(255,255,255,.3); border-radius: 5px; color: white; background: transparent; font-size: 18px; cursor: pointer; }
+    .scoreboard { padding: 20px 25px; display: flex; justify-content: center; align-items: center; gap: 25px; border-bottom: 1px solid var(--line); }
+    .score-team { text-align: center; }
+    .score-team-name { color: var(--muted); font-size: 10px; }
+    .score-number { margin-top: 4px; font-family: Georgia, serif; font-size: 34px; font-weight: 700; }
+    .score-divider { color: #a9b1ab; font-size: 11px; }
+    .story-line { padding: 14px 21px; color: #59675f; background: #f5f6f0; font-size: 11px; line-height: 1.75; }
+    .match-tactics { padding: 13px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .match-tactics > div { padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: white; }
+    .match-tactics strong, .match-tactics span, .match-tactics small { display: block; }
+    .match-tactics strong { font-size: 10px; }
+    .match-tactics span { margin-top: 5px; color: #56645d; font-size: 9px; }
+    .match-tactics small { margin-top: 5px; color: var(--green-dark); font-size: 9px; line-height: 1.6; }
+    .tactic-reward-summary { padding: 10px 20px; color: #705012; background: #fff4d9; font-size: 10px; font-weight: 800; }
+    .box-heading { padding: 17px 20px 7px; font-family: Georgia, "Songti SC", serif; font-size: 14px; font-weight: 700; }
+    .box-table th, .box-table td { padding: 9px 11px; }
+    .box-table th:first-child, .box-table td:first-child { padding-left: 20px; }
+    .box-table th:last-child, .box-table td:last-child { padding-right: 20px; }
+    .box-section { color: var(--green-dark); background: #f6f8f1; font-weight: 800; }
+    .toast { position: fixed; z-index: 5; right: 22px; bottom: 22px; max-width: calc(100vw - 44px); padding: 12px 16px; border-radius: 6px; color: white; background: var(--ink); box-shadow: var(--shadow); font-size: 11px; opacity: 0; transform: translateY(9px); transition: .2s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .footer-note { margin-top: 26px; color: #97a29a; text-align: center; font-size: 9px; }
+    .dashboard-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-bottom: 15px; }
+    .dashboard-stats .stat-card { padding: 13px 15px; }
+    .dashboard-stats .stat-card-value { margin-top: 5px; }
+    .dashboard-stats .stat-card-value strong { font-size: 23px; }
+    .manager-layout { display: grid; grid-template-columns: minmax(285px, .82fr) minmax(0, 1.5fr); align-items: start; gap: 16px; }
+    .manager-column { min-width: 0; display: grid; gap: 14px; }
+    .manager-panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); box-shadow: var(--shadow); }
+    .manager-panel .panel-head { padding: 14px 15px; }
+    .home-roster { max-height: 540px; overflow-y: auto; }
+    .home-player-row { min-height: 43px; display: grid; grid-template-columns: 30px minmax(0, 1fr) 42px 32px; align-items: center; gap: 8px; padding: 5px 12px; border-top: 1px solid #edf0e9; }
+    .home-player-row:first-child { border-top: 0; }
+    .home-player-row .avatar { width: 28px; height: 28px; font-size: 10px; }
+    .home-player-name { overflow: hidden; font-size: 11px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .home-player-rating { color: var(--green-dark); font-size: 11px; font-weight: 800; text-align: right; }
+    .home-starter { width: 29px; height: 27px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); background: white; font-size: 9px; font-weight: 800; cursor: pointer; }
+    .home-starter.selected { border-color: var(--green); color: white; background: var(--green); }
+    .home-manage-head { padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); }
+    .home-manage-head strong { font-family: Georgia, "Songti SC", serif; font-size: 13px; }
+    .home-manage-select { width: 100%; min-width: 0; min-height: 36px; padding: 0 9px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); background: white; font: inherit; font-size: 11px; }
+    .home-selected-player { padding: 12px 15px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .home-selected-player strong { font-size: 12px; }
+    .home-selected-player span { color: var(--muted); font-size: 10px; }
+    .home-attributes { padding: 9px 15px 14px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 15px; }
+    .home-attribute { min-height: 33px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-top: 1px solid #edf0e9; }
+    .home-attribute-label { color: #56645d; font-size: 10px; }
+    .home-attribute-control { display: flex; align-items: center; gap: 4px; }
+    .home-attribute-control strong { min-width: 18px; font-size: 10px; text-align: center; }
+    .home-attribute-control .tiny-button { width: 21px; height: 21px; font-size: 11px; }
+    .schedule-feature { position: relative; overflow: hidden; min-height: 174px; padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; color: #f6f4e9; background: linear-gradient(115deg, #234c3d, #316d55); }
+    .schedule-feature::after { content: ""; position: absolute; width: 170px; height: 170px; right: -36px; bottom: -107px; border: 1px solid rgba(222,241,181,.28); border-radius: 50%; box-shadow: 0 0 0 18px rgba(222,241,181,.04), 0 0 0 38px rgba(222,241,181,.04); }
+    .schedule-feature-copy { position: relative; z-index: 1; min-width: 0; }
+    .schedule-feature-kicker { color: #d1e2c8; font-size: 9px; letter-spacing: 1.3px; }
+    .schedule-feature-title { margin-top: 10px; font-family: Georgia, "Songti SC", serif; font-size: 23px; font-weight: 700; }
+    .schedule-feature-meta { margin-top: 6px; color: #d5e0d3; font-size: 10px; }
+    .schedule-feature .hero-button { position: relative; z-index: 1; flex: 0 0 auto; }
+    .home-schedule-list { max-height: 475px; overflow-y: auto; }
+    .home-schedule-row { min-height: 57px; display: grid; grid-template-columns: 78px minmax(0, 1fr) minmax(56px, auto) auto; align-items: center; gap: 9px; padding: 8px 13px; border-top: 1px solid #edf0e9; }
+    .home-schedule-row:first-child { border-top: 0; }
+    .home-schedule-date { color: var(--muted); font-size: 9px; }
+    .home-schedule-date strong { display: block; margin-top: 3px; color: var(--ink); font-size: 10px; }
+    .home-schedule-match { overflow: hidden; font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .home-schedule-type { margin-top: 3px; color: var(--muted); font-size: 9px; font-weight: 400; }
+    .home-schedule-result { color: var(--green-dark); font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .home-schedule-row .small-button { min-height: 29px; padding: 0 9px; font-size: 9px; }
+    .schedule-empty { padding: 20px; color: var(--muted); text-align: center; font-size: 10px; }
+    .event-panel { overflow: hidden; border: 1px solid #e8dfc6; border-radius: 9px; background: #fffdf5; box-shadow: var(--shadow); }
+    .event-panel-head { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #eee7d5; }
+    .event-panel-head strong { font-family: Georgia, "Songti SC", serif; font-size: 14px; }
+    .event-panel-head span { color: #8b7445; font-size: 9px; }
+    .event-body { padding: 15px 16px; }
+    .event-title { font-size: 12px; font-weight: 800; }
+    .event-description { margin-top: 6px; color: #657168; font-size: 10px; line-height: 1.7; }
+    .event-player { color: var(--green-dark); font-weight: 800; }
+    .event-options { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .event-option { min-height: 38px; padding: 7px 10px; border: 1px solid #dcd5c1; border-radius: 5px; color: #4c5b52; background: #fffefa; font-size: 10px; text-align: left; cursor: pointer; }
+    .event-option:hover { border-color: var(--green); color: var(--green-dark); background: #f4f7eb; }
+    .event-notice { color: #657168; font-size: 10px; line-height: 1.7; }
+    .tactic-mode-switch { display: flex; gap: 4px; padding: 12px 16px 0; }
+    .tactic-mode-button { min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); background: white; font-size: 10px; cursor: pointer; }
+    .tactic-mode-button.active { border-color: var(--green); color: white; background: var(--green); font-weight: 800; }
+    .tactics-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; padding: 16px; }
+    .tactic-select-label { display: grid; gap: 7px; font-size: 11px; font-weight: 750; }
+    .tactic-select-label select { width: 100%; }
+    .tactic-preview { padding: 15px 16px; border-top: 1px solid var(--line); background: #f7f8f2; }
+    .tactic-preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .tactic-preview-head strong { font-size: 11px; }
+    .tactic-preview-head span { color: var(--muted); font-size: 9px; }
+    .tactic-opponent { margin-top: 9px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+    .tactic-opponent-row { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; }
+    .tactic-opponent-row + .tactic-opponent-row { margin-top: 6px; }
+    .tactic-opponent-row span { color: var(--muted); }
+    .tactic-verdicts { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .tactic-verdict { padding: 5px 7px; border-radius: 4px; color: #68756c; background: #e9ede5; font-size: 9px; }
+    .tactic-verdict.success { color: #245541; background: #dcebd4; font-weight: 800; }
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 205px minmax(0, 1fr); }
+      .topbar { padding: 0 25px; }
+      .content { padding: 27px 25px 45px; }
+      .manager-layout { grid-template-columns: minmax(230px, .82fr) minmax(0, 1.5fr); gap: 11px; }
+      .home-schedule-row { grid-template-columns: 67px minmax(0, 1fr) auto; }
+      .home-schedule-row .home-schedule-result { display: none; }
+      .overview-grid { grid-template-columns: minmax(0, 1.3fr) minmax(220px, .8fr); }
+      .lineup-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .attribute-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      .app-shell { display: block; padding-bottom: 60px; }
+      .sidebar { position: fixed; z-index: 4; top: auto; right: 0; bottom: 0; left: 0; width: 100%; height: 60px; padding: 0 6px; flex-direction: row; border-top: 1px solid #31423a; }
+      .brand, .side-label, .side-spacer, .club-card { display: none; }
+      .nav-list { width: 100%; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; }
+      .nav-button { min-height: 54px; padding: 5px 2px; flex-direction: column; justify-content: center; gap: 3px; border-radius: 6px; font-size: 9px; }
+      .nav-glyph { font-size: 15px; }
+      .topbar { height: 53px; padding: 0 17px; }
+      .content { padding: 24px 15px 35px; }
+      .page-heading { align-items: flex-start; }
+      .date-chip { margin-top: 2px; font-size: 9px; }
+      .overview-grid { grid-template-columns: 1fr; }
+      .manager-layout { grid-template-columns: 1fr; }
+      .manager-right { order: -1; }
+      .home-roster { max-height: 390px; }
+      .home-schedule-list { max-height: 360px; }
+      .schedule-feature { min-height: 150px; padding: 17px; }
+      .schedule-feature-title { font-size: 20px; }
+      .home-schedule-row { grid-template-columns: 65px minmax(0, 1fr) auto; padding: 8px 10px; }
+      .home-schedule-row .home-schedule-result { display: none; }
+      .home-attributes { column-gap: 10px; padding-right: 11px; padding-left: 11px; }
+      .event-options { grid-template-columns: 1fr; }
+      .hero-panel { min-height: 218px; padding: 22px; }
+      .quick-stats { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+      .stat-card { padding: 14px; }
+      .stat-card-value strong { font-size: 24px; }
+      .next-match { grid-template-columns: 1fr 1fr; gap: 13px; }
+      .next-match .small-button { justify-self: start; }
+      .lineup-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .group-grid { grid-template-columns: 1fr; }
+      .schedule-row { grid-template-columns: 84px minmax(0, 1fr) auto; gap: 9px; padding: 11px 12px; }
+      .schedule-row .schedule-status { display: none; }
+      .log-row { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 9px; padding: 12px; }
+      .log-row .pill { display: none; }
+      .attribute-grid { grid-template-columns: 1fr; }
+      .player-select { min-width: 0; max-width: 145px; }
+      .panel-head { padding: 15px; }
+      .scoreboard { gap: 15px; }
+      .score-number { font-size: 29px; }
+      .box-table th, .box-table td { padding: 8px; font-size: 9px; }
+      .box-table th:first-child, .box-table td:first-child { padding-left: 12px; }
+      .box-table th:last-child, .box-table td:last-child { padding-right: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">8</div>
+        <div><div class="brand-title">深中单元篮球经理</div><div class="brand-sub">SHENZHEN MIDDLE SCHOOL</div></div>
+      </div>
+      <div class="side-label">球队管理</div>
+      <nav class="nav-list" aria-label="游戏导航">
+        <button class="nav-button active" data-view="home"><span class="nav-glyph">⌂</span><span>球队概览</span></button>
+        <button class="nav-button" data-view="roster"><span class="nav-glyph">♟</span><span>阵容管理</span></button>
+        <button class="nav-button" data-view="tactics"><span class="nav-glyph">⇄</span><span>攻防策略</span></button>
+        <button class="nav-button" data-view="training"><span class="nav-glyph">＋</span><span>球员加点</span></button>
+        <button class="nav-button" data-view="friendlies"><span class="nav-glyph">◷</span><span>友谊赛程</span></button>
+        <button class="nav-button" data-view="cup"><span class="nav-glyph">♜</span><span>深中杯</span></button>
+      </nav>
+      <div class="side-spacer"></div>
+      <div class="club-card">
+        <div class="club-kicker">YOUR CLUB</div>
+        <div class="club-name">八单篮球队</div>
+        <div class="club-meta">小组 <strong>A 组</strong>　·　球员 <strong>12 人</strong></div>
+      </div>
+      <div class="side-label" style="margin-top:15px">赛季 2026—27</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="season-label">经理工作台 <strong>2026 — 2027 赛季</strong></div>
+        <div class="save-state"><span class="save-dot"></span>进度已保存在本机</div>
+      </header>
+      <div class="content">
+        <div class="page-heading">
+          <div><div class="eyebrow" id="page-eyebrow">球队工作台</div><h1 id="page-title">新赛季，从这里开始。</h1><div class="heading-note" id="page-note">排好首发，带八单打出自己的节奏。</div></div>
+          <div class="date-chip">赛季日历　<strong id="season-date">2026 / 12 — 2027 / 10</strong></div>
+        </div>
+
+        <section class="view active" id="view-home" aria-label="球队概览">
+          <div class="dashboard-stats">
+            <div class="stat-card"><div class="stat-card-label">友谊赛战绩</div><div class="stat-card-value"><strong id="friendly-record">0–0</strong><span id="friendly-played">已赛 0 场</span></div><div class="stat-foot" id="friendly-points">可分配属性点　0</div></div>
+            <div class="stat-card"><div class="stat-card-label">深中杯 A 组</div><div class="stat-card-value"><strong id="cup-record">0–0</strong><span id="cup-standing">小组赛未开赛</span></div><div class="stat-foot" id="cup-status">前两名晋级四强</div></div>
+          </div>
+          <div class="manager-layout">
+            <div class="manager-column manager-left">
+              <section class="manager-panel"><div class="panel-head"><div><h2>八单阵容</h2><div class="panel-sub">12 人名单 · 选择 5 名首发</div></div><span class="pill" id="home-starter-count">首发 5 / 5</span></div><div class="home-roster" id="home-roster"></div></section>
+              <section class="manager-panel"><div class="home-manage-head"><strong>球员管理</strong><span class="point-badge">余 <span id="home-training-points">0</span> 点</span></div><div style="padding:12px 15px 0"><select class="home-manage-select" id="home-training-player" aria-label="选择要管理的球员"></select></div><div class="home-selected-player"><strong id="home-selected-name"></strong><span id="home-selected-rating"></span></div><div class="home-attributes" id="home-attribute-grid"></div><div style="padding:0 15px 14px"><button class="text-button" data-view="training">完整养成面板 →</button></div></section>
+            </div>
+            <div class="manager-column manager-right">
+              <section class="manager-panel"><div class="panel-head"><div><h2>赛程</h2><div class="panel-sub">友谊赛与深中杯 · 点击八单场次开始模拟</div></div><button class="text-button" data-view="friendlies">赛程详情 →</button></div><div id="next-match-card"></div><div class="home-schedule-list" id="home-schedule"></div></section>
+              <section class="event-panel" id="campus-event"></section>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-tactics" aria-label="攻防策略">
+          <div class="panel tactics-panel">
+            <div class="panel-head"><div><h2>攻防策略</h2><div class="panel-sub">友谊赛与深中杯分别保存战术，赛前根据对手调整。</div></div></div>
+            <div class="tactic-mode-switch" role="group" aria-label="选择比赛模式"><button class="tactic-mode-button active" data-action="set-tactic-mode" data-mode="friendly">友谊赛</button><button class="tactic-mode-button" data-action="set-tactic-mode" data-mode="cup">深中杯</button></div>
+            <div class="tactics-editor">
+              <label class="tactic-select-label">进攻战术<select id="offense-tactic" class="player-select"></select></label>
+              <label class="tactic-select-label">防守战术<select id="defense-tactic" class="player-select"></select></label>
+            </div>
+            <div class="tactic-preview" id="tactic-preview"></div>
+          </div>
+          <div class="cup-note">友谊赛胜场基础 8 点、负场基础 4 点；进攻或防守克制成功各额外获得 2 点。深中杯使用独立战术配置，不发放养成点。</div>
+        </section>
+
+        <section class="view" id="view-roster" aria-label="阵容管理">
+          <div class="panel">
+            <div class="panel-head"><div><h2>球员名单</h2><div class="panel-sub">12 人名单，选择 5 名首发球员。</div></div><span class="pill" id="starter-count">首发 5 / 5</span></div>
+            <div class="table-scroll"><table class="roster-table"><thead><tr><th>首发</th><th>球员</th><th>年龄</th><th>进攻</th><th>防守</th><th>基本盘</th><th>总评</th></tr></thead><tbody id="roster-body"></tbody></table></div>
+          </div>
+          <div class="cup-note">点击球员行首的按钮切换首发。其余 7 人参与轮换。</div>
+        </section>
+
+        <section class="view" id="view-training" aria-label="球员加点">
+          <div class="panel" style="margin-bottom:15px"><div class="panel-head"><div><h2>球员养成</h2><div class="panel-sub">友谊赛结束后获得养成点，为球员的 10 项属性逐点投入。</div></div><span class="point-badge">可分配　<span id="training-points">0</span> 点</span></div>
+            <div style="padding:15px 19px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><label for="training-player" style="font-size:11px;font-weight:750">选择球员</label><select class="player-select" id="training-player" aria-label="选择训练球员"></select><span style="color:var(--muted);font-size:10px">胜 8 点 · 负 4 点 · 克制命中各 +2 · 属性上限 99</span></div>
+          </div>
+          <div class="attribute-grid" id="attribute-grid"></div>
+          <div class="cup-note">属性点永久生效并保存在本机。比赛结束后即可分配，尚未使用的点数不会过期。</div>
+        </section>
+
+        <section class="view" id="view-friendlies" aria-label="友谊赛赛程">
+          <div class="panel"><div class="panel-head"><div><h2>单循环友谊赛</h2><div class="panel-sub">与其余 7 个单元各交手一次，胜负不计入深中杯排名。</div></div><span class="pill" id="friendly-progress">已完成 0 / 7</span></div><div class="schedule-list" id="friendly-list"></div></div>
+          <div class="cup-note">比赛日从 2026 年 12 月至 2027 年 6 月间随机安排在周四。胜场基础 8 点、负场基础 4 点，成功克制对手的进攻或防守战术还可额外获得属性点。</div>
+        </section>
+
+        <section class="view" id="view-cup" aria-label="深中杯赛事">
+          <div class="panel" style="margin-bottom:16px"><div class="panel-head"><div><h2>深中杯 · 正式赛</h2><div class="panel-sub">两组循环赛前两名晋级；半决赛交叉对阵，胜者争夺冠军。</div></div><span class="pill" id="cup-phase">小组赛</span></div>
+            <div style="padding:15px 19px 18px"><div class="group-grid" id="group-tables"></div><div class="group-matches" id="cup-schedule"></div></div>
+          </div>
+          <div class="cup-note">小组赛每轮在同一比赛日进行，点击八单的比赛即可模拟本轮全部赛果。淘汰赛结果决定最终晋级球队。</div>
+        </section>
+
+        <section class="view" id="view-logs" aria-label="比赛日志">
+          <div class="panel"><div class="panel-head"><div><h2>比赛日志</h2><div class="panel-sub">所有正式比赛与友谊赛的比分、赛况和球员数据。</div></div><span class="pill" id="log-count">0 场</span></div><div class="log-list" id="log-list"></div></div>
+        </section>
+        <div class="footer-note">深中单元篮球经理　·　单机赛季进度保存在当前浏览器</div>
+      </div>
+    </main>
+  </div>
+  <dialog id="match-dialog" aria-labelledby="dialog-title">
+    <div id="dialog-content"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const SAVE_KEY = "szms-unit-basketball-manager-v1";
+      const ATTRIBUTES = [
+        { key: "three", label: "三分", group: "进攻" },
+        { key: "mid", label: "中投", group: "进攻" },
+        { key: "finish", label: "终结能力", group: "进攻" },
+        { key: "perimeter", label: "外防", group: "防守" },
+        { key: "interior", label: "内防", group: "防守" },
+        { key: "rebound", label: "篮板", group: "防守" },
+        { key: "stamina", label: "体力", group: "基本盘" },
+        { key: "strength", label: "力量", group: "基本盘" },
+        { key: "speed", label: "速度", group: "基本盘" },
+        { key: "handling", label: "传控能力", group: "基本盘" }
+      ];
+      const OFFENSE_TACTICS = ["挡拆为主", "三分投射", "内线强攻", "快攻反击", "均衡传切"];
+      const DEFENSE_TACTICS = ["人盯人", "2-3区域联防", "3-2区域联防", "全场紧逼", "收缩护框"];
+      const TACTIC_MATCHUPS = {
+        "挡拆为主": { beats: ["2-3区域联防"], counteredBy: ["3-2区域联防"] },
+        "三分投射": { beats: ["收缩护框"], counteredBy: ["人盯人"] },
+        "内线强攻": { beats: ["3-2区域联防"], counteredBy: ["收缩护框"] },
+        "快攻反击": { beats: ["全场紧逼"], counteredBy: ["2-3区域联防"] },
+        "均衡传切": { beats: [], counteredBy: [] }
+      };
+      const DEFENSE_MATCHUPS = {
+        "人盯人": { beats: ["三分投射"], counteredBy: ["快攻反击"] },
+        "2-3区域联防": { beats: ["快攻反击"], counteredBy: ["挡拆为主"] },
+        "3-2区域联防": { beats: ["挡拆为主"], counteredBy: ["内线强攻"] },
+        "全场紧逼": { beats: ["均衡传切"], counteredBy: ["快攻反击"] },
+        "收缩护框": { beats: ["内线强攻"], counteredBy: ["三分投射"] }
+      };
+      const TEAMS = [
+        { id: "eight", name: "八单", group: "A", rating: 69 },
+        { id: "one", name: "一单", group: "A", rating: 70 },
+        { id: "three", name: "三单", group: "A", rating: 67 },
+        { id: "five", name: "五单", group: "A", rating: 66 },
+        { id: "two", name: "二单", group: "B", rating: 71 },
+        { id: "four", name: "四单", group: "B", rating: 68 },
+        { id: "six", name: "六单", group: "B", rating: 65 },
+        { id: "seven", name: "七单", group: "B", rating: 69 }
+      ];
+      const PLAYER_NAMES = ["林上景", "阮焕翀", "谢名之", "熊彻", "何天心", "赫元哲", "沈桐炎", "王燿宸", "李祖樾", "江明谦", "马恩泽", "毕景涵"];
+      const PLAYER_PROFILES = [
+        { handling: 8, speed: 5, three: 3, perimeter: 2 },
+        { three: 9, mid: 5, handling: 3, speed: 2 },
+        { finish: 9, speed: 7, strength: 3, handling: 2 },
+        { interior: 6, rebound: 6, strength: 6, handling: 3, mid: 3 },
+        { strength: 7, interior: 6, rebound: 5, perimeter: 1 },
+        { three: 8, mid: 5, handling: 2 },
+        { speed: 5, perimeter: 5, finish: 3, three: 2 },
+        { interior: 4, rebound: 5, strength: 4, three: 3 },
+        { perimeter: 4, speed: 4, finish: 3, rebound: 2 },
+        { handling: 6, speed: 4, perimeter: 2 },
+        { interior: 4, rebound: 4, strength: 5, mid: 2 },
+        { three: 6, mid: 4, interior: 2, rebound: 2 }
+      ];
+      const CAMPUS_EVENT_TEMPLATES = [
+        {
+          title: "队友之间有了摩擦",
+          description: "两位队员在训练分组时发生争执，其他队员也开始议论。你准备怎么处理？",
+          options: [
+            { label: "分别沟通，再一起复盘", outcome: "沟通缓和了分歧", changes: [{ key: "handling", amount: 2 }, { key: "stamina", amount: 1 }] },
+            { label: "当众批评，立刻结束争论", outcome: "矛盾暂时压下，球员心态受挫", changes: [{ key: "handling", amount: -2 }, { key: "stamina", amount: -1 }] }
+          ]
+        },
+        {
+          title: "训练和晚自习撞了时间",
+          description: "有队员发现加练会占用晚自习，正在犹豫是否留下。",
+          options: [
+            { label: "协调训练时段，保证学习和休息", outcome: "安排更合理，体能与传控都有提升", changes: [{ key: "stamina", amount: 2 }, { key: "handling", amount: 1 }] },
+            { label: "要求继续加练，先把训练做完", outcome: "加练提升速度，但休息不足", changes: [{ key: "speed", amount: 2 }, { key: "stamina", amount: -2 }] }
+          ]
+        },
+        {
+          title: "临时借不到训练场",
+          description: "球队常用的场地被社团活动占用，剩下的训练时间不多了。",
+          options: [
+            { label: "改做投篮专项，缩短训练", outcome: "专项练习奏效，但体能消耗了一些", changes: [{ key: "three", amount: 2 }, { key: "stamina", amount: -1 }] },
+            { label: "取消训练，让大家充分休息", outcome: "球员恢复了体能，训练节奏有所下降", changes: [{ key: "stamina", amount: 2 }, { key: "speed", amount: -1 }] }
+          ]
+        },
+        {
+          title: "作业太多，训练状态不佳",
+          description: "一名队员最近被几门作业压得喘不过气，今天的训练明显不在状态。",
+          options: [
+            { label: "帮忙协调作业时间，再安排短训", outcome: "学习与训练安排妥当，球员状态回升", changes: [{ key: "handling", amount: 1 }, { key: "stamina", amount: 2 }] },
+            { label: "照常完成高强度训练", outcome: "强度训练加强了力量，但疲劳加重", changes: [{ key: "strength", amount: 2 }, { key: "stamina", amount: -2 }] }
+          ]
+        }
+      ];
+      const TITLES = {
+        home: ["球队工作台", "新赛季，从这里开始。", "排好首发，带八单打出自己的节奏。"],
+        roster: ["球队管理", "阵容管理", "找到五个人之间最好的化学反应。"],
+        tactics: ["临场布置", "攻防策略", "根据对手的特点，为友谊赛和深中杯分别制定方案。"],
+        training: ["球员发展", "每一点，都算数。", "把友谊赛的收获，投入到需要它的地方。"],
+        friendlies: ["赛季日历", "七场热身，七次磨合。", "与其他七个单元各交手一次，不计入杯赛排名。"],
+        cup: ["冠军之路", "深中杯，正式开打。", "小组赛、交叉半决赛、总决赛。每一场都决定去向。"],
+        logs: ["赛季档案", "每一场，都有回响。", "比分、赛况与球员个人数据，尽在比赛日志。"]
+      };
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+      function createInitialPlayers() {
+        return PLAYER_NAMES.map((name, index) => {
+          const base = [73, 72, 71, 70, 65, 66, 65, 64, 64, 66, 65, 64][index];
+          const attrs = {};
+          ATTRIBUTES.forEach((attribute, offset) => {
+            const roleBias = PLAYER_PROFILES[index][attribute.key] || 0;
+            attrs[attribute.key] = Math.max(48, Math.min(90, base + roleBias + ((index * 7 + offset * 5) % 7) - 3));
+          });
+          return { id: `p${index + 1}`, name, age: 15 + (index % 3), attributes: attrs };
+        });
+      }
+
+      function createCampusEvent(players) {
+        const player = players[Math.floor(Math.random() * players.length)];
+        const template = CAMPUS_EVENT_TEMPLATES[Math.floor(Math.random() * CAMPUS_EVENT_TEMPLATES.length)];
+        const description = template.description;
+        return { id: `event-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`, playerId: player.id, title: template.title, description, options: template.options };
+      }
+
+      function createRandomTactics() {
+        return {
+          offense: OFFENSE_TACTICS[Math.floor(Math.random() * OFFENSE_TACTICS.length)],
+          defense: DEFENSE_TACTICS[Math.floor(Math.random() * DEFENSE_TACTICS.length)]
+        };
+      }
+
+      function defaultTactics() {
+        return {
+          friendly: { offense: "均衡传切", defense: "人盯人" },
+          cup: { offense: "均衡传切", defense: "人盯人" }
+        };
+      }
+
+      function makeFriendlyDates() {
+        const thursdays = [];
+        const cursor = new Date(2026, 11, 1, 12);
+        const end = new Date(2027, 5, 30, 12);
+        while (cursor <= end) {
+          if (cursor.getDay() === 4) thursdays.push(new Date(cursor));
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        for (let index = thursdays.length - 1; index > 0; index--) {
+          const swapIndex = Math.floor(Math.random() * (index + 1));
+          [thursdays[index], thursdays[swapIndex]] = [thursdays[swapIndex], thursdays[index]];
+        }
+        return thursdays.slice(0, 7).sort((a, b) => a - b).map(date => formatDate(date));
+      }
+
+      function buildCupSchedule() {
+        const rounds = [
+          [[0, 3], [1, 2]],
+          [[0, 2], [3, 1]],
+          [[0, 1], [2, 3]]
+        ];
+        const schedule = [];
+        ["A", "B"].forEach(group => {
+          const members = TEAMS.filter(team => team.group === group);
+          rounds.forEach((round, roundIndex) => {
+            round.forEach((pair, gameIndex) => {
+              schedule.push({
+                id: `group-${group}-${roundIndex + 1}-${gameIndex + 1}`,
+                stage: "group", group, round: roundIndex + 1,
+                date: `2027-10-${String(12 + roundIndex * 2).padStart(2, "0")}`,
+                home: members[pair[0]].id, away: members[pair[1]].id
+              });
+            });
+          });
+        });
+        return schedule;
+      }
+
+      function freshState() {
+        const friendlyDates = makeFriendlyDates();
+        const opponents = TEAMS.filter(team => team.id !== "eight");
+        const players = createInitialPlayers();
+        return {
+          players,
+          starters: ["p1", "p2", "p3", "p4", "p5"],
+          points: 0,
+          selectedPlayer: "p1",
+          friendlyDates,
+          friendlies: opponents.map((team, index) => ({ id: `friendly-${team.id}`, teamId: team.id, date: friendlyDates[index] })),
+          friendlyResults: {},
+          cupSchedule: buildCupSchedule(),
+          cupResults: {},
+          logs: [],
+          pendingEvent: createCampusEvent(players),
+          lastEventOutcome: "",
+          tactics: defaultTactics(),
+          opponentTactics: {
+            friendly: Object.fromEntries(opponents.map(team => [team.id, createRandomTactics()])),
+            cup: Object.fromEntries(TEAMS.filter(team => team.id !== "eight").map(team => [team.id, createRandomTactics()]))
+          }
+        };
+      }
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+          if (saved && Array.isArray(saved.players) && (saved.players.length === 10 || saved.players.length === 12) && Array.isArray(saved.starters)) {
+            const base = freshState();
+            const players = base.players.map((player, index) => {
+              const oldPlayer = saved.players[index];
+              return oldPlayer?.attributes ? { ...player, attributes: oldPlayer.attributes } : player;
+            });
+            const validStarters = saved.starters.filter(id => players.some(player => player.id === id)).slice(0, 5);
+            const savedTactics = saved.tactics || {};
+            const tactics = defaultTactics();
+            ["friendly", "cup"].forEach(mode => {
+              const choice = savedTactics[mode] || {};
+              tactics[mode] = {
+                offense: OFFENSE_TACTICS.includes(choice.offense) ? choice.offense : tactics[mode].offense,
+                defense: DEFENSE_TACTICS.includes(choice.defense) ? choice.defense : tactics[mode].defense
+              };
+            });
+            return { ...base, ...saved, players, starters: validStarters.length === 5 ? validStarters : base.starters, friendlyDates: saved.friendlyDates || base.friendlyDates, friendlies: saved.friendlies || base.friendlies, cupSchedule: base.cupSchedule, pendingEvent: Object.hasOwn(saved, "pendingEvent") ? saved.pendingEvent : base.pendingEvent, lastEventOutcome: saved.lastEventOutcome || "", tactics, opponentTactics: { friendly: { ...base.opponentTactics.friendly, ...(saved.opponentTactics?.friendly || {}) }, cup: { ...base.opponentTactics.cup, ...(saved.opponentTactics?.cup || {}) } } };
+          }
+        } catch (error) {
+          console.warn("Could not load saved season", error);
+        }
+        return freshState();
+      }
+
+      let state = loadState();
+      let activeView = "home";
+      let activeTacticMode = "friendly";
+      let toastTimer;
+      const dialog = $("#match-dialog");
+
+      function persist() {
+        try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+        catch (error) { console.warn("Could not save season", error); }
+      }
+
+      function formatDate(value, includeDay = false) {
+        const date = typeof value === "string" ? new Date(`${value}T12:00:00`) : value;
+        const base = `${date.getMonth() + 1}月${date.getDate()}日`;
+        return includeDay ? `${base} 周${"日一二三四五六"[date.getDay()]}` : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      }
+
+      function teamById(id) { return TEAMS.find(team => team.id === id); }
+      function playerById(id) { return state.players.find(player => player.id === id); }
+      function average(values) { return values.reduce((sum, value) => sum + value, 0) / (values.length || 1); }
+      function playerRating(player, keys = ATTRIBUTES.map(attribute => attribute.key)) {
+        return Math.round(average(keys.map(key => player.attributes[key])));
+      }
+      function teamRating() {
+        const players = state.players.filter(player => state.starters.includes(player.id));
+        return average(players.map(player => playerRating(player)));
+      }
+      function teamStat(playerList, keys) {
+        return Math.round(average(playerList.map(player => playerRating(player, keys))));
+      }
+      function friendlyScoreline(result) { return `${result.homeScore} : ${result.awayScore}`; }
+      function teamName(id) { return id === "eight" ? "八单" : teamById(id)?.name || "待定"; }
+      function teamTactics(teamId, mode) {
+        return teamId === "eight" ? state.tactics[mode] : state.opponentTactics[mode][teamId];
+      }
+      function evaluateTactics(own, opponent) {
+        return {
+          offenseSuccess: TACTIC_MATCHUPS[own.offense].beats.includes(opponent.defense),
+          defenseSuccess: DEFENSE_MATCHUPS[own.defense].beats.includes(opponent.offense)
+        };
+      }
+      function scoreForTeam(result, id) { return result.homeId === id ? result.homeScore : result.awayScore; }
+      function opponentScoreForTeam(result, id) { return result.homeId === id ? result.awayScore : result.homeScore; }
+
+      function allMatchRecords() {
+        return [
+          ...state.friendlies.map(match => ({ ...match, result: state.friendlyResults[match.id], type: "友谊赛" })),
+          ...state.cupSchedule.map(match => ({ ...match, result: state.cupResults[match.id], type: match.stage === "group" ? `${match.group} 组 · 第 ${match.round} 轮` : match.stage === "semi" ? "半决赛" : "总决赛" }))
+        ];
+      }
+
+      function resultRecord(result, metadata) {
+        const log = {
+          id: `${metadata.id}-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
+          matchId: metadata.id, date: metadata.date, competition: metadata.competition,
+          homeId: metadata.homeId, awayId: metadata.awayId, homeName: metadata.homeName, awayName: metadata.awayName,
+          homeScore: result.homeScore, awayScore: result.awayScore, homeStats: result.homeStats, awayStats: result.awayStats,
+          story: result.story, isUserMatch: metadata.isUserMatch,
+          tactics: result.tactics, attributeReward: result.attributeReward
+        };
+        state.logs.unshift(log);
+        return log;
+      }
+
+      function allocate(total, players, weights) {
+        const weightSum = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+        const raw = weights.map(weight => (total * weight) / weightSum);
+        const values = raw.map(Math.floor);
+        let remainder = total - values.reduce((sum, value) => sum + value, 0);
+        const order = raw.map((value, index) => ({ index, remainder: value - Math.floor(value) })).sort((a, b) => b.remainder - a.remainder);
+        for (let index = 0; index < remainder; index++) values[order[index % order.length].index]++;
+        return players.map((player, index) => ({ playerId: player.id, name: player.name, ...valuesForPlayer(player, values[index], index) }));
+      }
+
+      function valuesForPlayer(player, points, index) {
+        const startNoise = index * 13;
+        return {
+          points,
+          rebounds: 2 + (startNoise % 5) + (player.attributes.rebound >= 70 ? 2 : 0),
+          assists: 1 + ((startNoise + 2) % 5) + (player.attributes.handling >= 70 ? 2 : 0),
+          steals: (startNoise + 3) % 3,
+          blocks: (startNoise + 1) % 2 + (player.attributes.interior >= 70 ? 1 : 0),
+          turnovers: (startNoise + 2) % 3,
+          minutes: index < 5 ? 30 : index === 11 ? 8 : 7
+        };
+      }
+
+      function createRivalRoster(teamId) {
+        const team = teamById(teamId);
+        return Array.from({ length: 12 }, (_, index) => {
+          const overall = team.rating + (index < 3 ? 3 : 0) - Math.floor(index / 3) * 2;
+          const attributes = {};
+          ATTRIBUTES.forEach((attribute, offset) => { attributes[attribute.key] = overall + ((index * 3 + offset * 2) % 7) - 3; });
+          return { id: `${teamId}-p${index + 1}`, name: `${team.name}球员${index + 1}`, attributes };
+        });
+      }
+
+      function simulateTeamStats(players, starters, score) {
+        const ordered = [...players.filter(player => starters.includes(player.id)), ...players.filter(player => !starters.includes(player.id))];
+        const usageWeights = ordered.map((player, index) => {
+          const rating = playerRating(player, ["three", "mid", "finish", "handling"]);
+          return Math.max(3, rating * (index < 5 ? 1.4 : .42) + Math.random() * 13);
+        });
+        return allocate(score, ordered, usageWeights);
+      }
+
+      function buildStory(homeName, awayName, homeScore, awayScore, friendly) {
+        const winner = homeScore > awayScore ? homeName : awayName;
+        const margin = Math.abs(homeScore - awayScore);
+        const endings = margin <= 3
+          ? ["最后一攻才分出胜负，场边的队员全都站了起来。", "终场前的防守守住了优势，比分一直悬念到最后。", "两队缠斗到最后一刻，关键回合决定了结局。"]
+          : margin <= 10
+            ? ["下半场的一波攻势拉开了比分，领先方稳稳收下比赛。", "轮换阵容在关键时段顶住压力，优势保持到了终场。", "第三节的节奏变化成为转折，胜负在末节逐渐明朗。"]
+            : ["比赛从中段开始逐渐失去悬念，胜方在攻防两端都占了上风。", "稳定的篮板与转换进攻帮助胜方建立起明显优势。", "领先一方早早掌握主动，轮换球员也获得了充分出场时间。"];
+        const opener = friendly ? "这场热身赛" : "这场正式比赛";
+        return `${opener}中，${winner}以 ${Math.max(homeScore, awayScore)} 比 ${Math.min(homeScore, awayScore)} 获胜。${endings[Math.floor(Math.random() * endings.length)]}`;
+      }
+
+      function simulateMatch(homeId, awayId, friendly = false) {
+        const homePlayers = homeId === "eight" ? state.players : createRivalRoster(homeId);
+        const awayPlayers = awayId === "eight" ? state.players : createRivalRoster(awayId);
+        const homeStarters = homeId === "eight" ? state.starters : homePlayers.slice(0, 5).map(player => player.id);
+        const awayStarters = awayId === "eight" ? state.starters : awayPlayers.slice(0, 5).map(player => player.id);
+        const homeRating = homeId === "eight" ? teamRating() : teamById(homeId).rating;
+        const awayRating = awayId === "eight" ? teamRating() : teamById(awayId).rating;
+        const mode = friendly ? "friendly" : "cup";
+        const homeTactics = teamTactics(homeId, mode);
+        const awayTactics = teamTactics(awayId, mode);
+        const homeFit = evaluateTactics(homeTactics, awayTactics);
+        const awayFit = evaluateTactics(awayTactics, homeTactics);
+        const tacticalEdge = (Number(homeFit.offenseSuccess) + Number(homeFit.defenseSuccess) - Number(awayFit.offenseSuccess) - Number(awayFit.defenseSuccess)) * 2;
+        let homeScore = Math.max(35, Math.round(57 + (homeRating - 67) * 1.1 + (friendly ? 0 : 2) + tacticalEdge + (Math.random() * 20 - 10)));
+        let awayScore = Math.max(35, Math.round(57 + (awayRating - 67) * 1.1 - tacticalEdge + (Math.random() * 20 - 10)));
+        if (homeScore === awayScore) awayScore++;
+        return {
+          homeScore, awayScore,
+          homeStats: simulateTeamStats(homePlayers, homeStarters, homeScore),
+          awayStats: simulateTeamStats(awayPlayers, awayStarters, awayScore),
+          tactics: {
+            home: { ...homeTactics, ...homeFit },
+            away: { ...awayTactics, ...awayFit }
+          },
+          story: buildStory(teamName(homeId), teamName(awayId), homeScore, awayScore, friendly)
+        };
+      }
+
+      function friendlyPointReward(result) {
+        const won = result.homeScore > result.awayScore;
+        const base = won ? 8 : 4;
+        const offenseBonus = result.tactics.home.offenseSuccess ? 2 : 0;
+        const defenseBonus = result.tactics.home.defenseSuccess ? 2 : 0;
+        return { won, base, offenseBonus, defenseBonus, total: base + offenseBonus + defenseBonus };
+      }
+
+      function showToast(message) {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2400);
+      }
+
+      function navigate(view) {
+        activeView = view;
+        $$(".view").forEach(element => element.classList.toggle("active", element.id === `view-${view}`));
+        $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+        const title = TITLES[view] || TITLES.home;
+        $("#page-eyebrow").textContent = title[0];
+        $("#page-title").textContent = title[1];
+        $("#page-note").textContent = title[2];
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function render() {
+        renderHome();
+        renderRoster();
+        renderTactics();
+        renderTraining();
+        renderFriendlies();
+        renderCup();
+        renderLogs();
+      }
+
+      function renderTactics() {
+        const mode = activeTacticMode;
+        const current = state.tactics[mode];
+        $$(".tactic-mode-button").forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
+        $("#offense-tactic").innerHTML = OFFENSE_TACTICS.map(tactic => `<option value="${tactic}">${tactic}</option>`).join("");
+        $("#defense-tactic").innerHTML = DEFENSE_TACTICS.map(tactic => `<option value="${tactic}">${tactic}</option>`).join("");
+        $("#offense-tactic").value = current.offense;
+        $("#defense-tactic").value = current.defense;
+        const opponentFixture = mode === "friendly"
+          ? getNextFriendly() && { teamId: getNextFriendly().teamId }
+          : (cupMatchForUser() || state.cupSchedule.find(match => match.home === "eight" || match.away === "eight")) && (() => {
+            const match = cupMatchForUser() || state.cupSchedule.find(item => item.home === "eight" || item.away === "eight");
+            return { teamId: match.home === "eight" ? match.away : match.home };
+          })();
+        if (!opponentFixture) {
+          $("#tactic-preview").innerHTML = `<div class="tactic-preview-head"><strong>赛前对手战术</strong></div><div class="tactic-opponent">当前模式暂无待交手对手。策略会保留并用于后续比赛。</div>`;
+          return;
+        }
+        const opponent = teamTactics(opponentFixture.teamId, mode);
+        const fit = evaluateTactics(current, opponent);
+        const modeName = mode === "friendly" ? "下一场友谊赛" : "深中杯下一场";
+        $("#tactic-preview").innerHTML = `<div class="tactic-preview-head"><strong>${modeName} · ${escapeHtml(teamName(opponentFixture.teamId))}</strong><span>对手战术已随机生成</span></div><div class="tactic-opponent"><div class="tactic-opponent-row"><span>对手进攻</span><strong>${escapeHtml(opponent.offense)}</strong></div><div class="tactic-opponent-row"><span>对手防守</span><strong>${escapeHtml(opponent.defense)}</strong></div></div><div class="tactic-verdicts"><span class="tactic-verdict ${fit.offenseSuccess ? "success" : ""}">进攻 ${fit.offenseSuccess ? "克制成功" : "未形成克制"}</span><span class="tactic-verdict ${fit.defenseSuccess ? "success" : ""}">防守 ${fit.defenseSuccess ? "克制成功" : "未形成克制"}</span></div>`;
+      }
+
+      function updateTactic(type, value) {
+        const valid = type === "offense" ? OFFENSE_TACTICS : DEFENSE_TACTICS;
+        if (!valid.includes(value)) return;
+        state.tactics[activeTacticMode][type] = value;
+        persist();
+        render();
+      }
+
+      function getNextFriendly() {
+        return state.friendlies.find(match => !state.friendlyResults[match.id]);
+      }
+
+      function friendliesComplete() {
+        return state.friendlies.every(match => Boolean(state.friendlyResults[match.id]));
+      }
+
+      function getCupRound(round) { return state.cupSchedule.filter(match => match.stage === "group" && match.round === round); }
+      function getCupRoundStatus(round) { return getCupRound(round).every(match => Boolean(state.cupResults[match.id])); }
+
+      function standings(group) {
+        const teams = TEAMS.filter(team => team.group === group);
+        const rows = teams.map(team => ({ teamId: team.id, name: team.name, played: 0, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }));
+        state.cupSchedule.filter(match => match.stage === "group" && match.group === group).forEach(match => {
+          const result = state.cupResults[match.id];
+          if (!result) return;
+          const home = rows.find(row => row.teamId === match.home);
+          const away = rows.find(row => row.teamId === match.away);
+          home.played++; away.played++;
+          home.pointsFor += result.homeScore; home.pointsAgainst += result.awayScore;
+          away.pointsFor += result.awayScore; away.pointsAgainst += result.homeScore;
+          if (result.homeScore > result.awayScore) { home.wins++; away.losses++; }
+          else { away.wins++; home.losses++; }
+        });
+        return rows.sort((a, b) => b.wins - a.wins || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst) || b.pointsFor - a.pointsFor);
+      }
+
+      function groupPhaseComplete() { return [1, 2, 3].every(getCupRoundStatus); }
+      function cupQualification() {
+        if (!groupPhaseComplete()) return null;
+        return standings("A").slice(0, 2).some(row => row.teamId === "eight");
+      }
+
+      function getSemiMatches() {
+        if (!groupPhaseComplete() || !cupQualification()) return [];
+        const groupA = standings("A");
+        const groupB = standings("B");
+        return [
+          { id: "semi-a1-b2", stage: "semi", date: "2027-10-19", home: groupA[0].teamId, away: groupB[1].teamId, label: "A 组第一 vs B 组第二" },
+          { id: "semi-b1-a2", stage: "semi", date: "2027-10-19", home: groupB[0].teamId, away: groupA[1].teamId, label: "B 组第一 vs A 组第二" }
+        ];
+      }
+
+      function getFinalMatch() {
+        const semis = getSemiMatches();
+        if (semis.length !== 2 || !semis.every(match => state.cupResults[match.id])) return null;
+        const finalists = semis.map(match => {
+          const result = state.cupResults[match.id];
+          return result.homeScore > result.awayScore ? match.home : match.away;
+        });
+        return { id: "final-2027", stage: "final", date: "2027-10-22", home: finalists[0], away: finalists[1], label: "深中杯总决赛" };
+      }
+
+      function cupMatchForUser() {
+        if (!friendliesComplete()) return null;
+        for (let round = 1; round <= 3; round++) {
+          if (getCupRoundStatus(round)) continue;
+          const roundMatches = getCupRound(round);
+          return roundMatches.find(match => match.home === "eight" || match.away === "eight") || null;
+        }
+        const qualification = cupQualification();
+        if (qualification === false) return null;
+        const semis = getSemiMatches();
+        if (semis.length) {
+          const userSemi = semis.find(match => match.home === "eight" || match.away === "eight");
+          if (userSemi && !state.cupResults[userSemi.id]) return userSemi;
+          if (!userSemi) return null;
+        }
+        const final = getFinalMatch();
+        if (final && (final.home === "eight" || final.away === "eight") && !state.cupResults[final.id]) return final;
+        return null;
+      }
+
+      function cupUserStatus() {
+        if (!groupPhaseComplete()) {
+          const row = standings("A").find(item => item.teamId === "eight");
+          return row.played ? `A 组第 ${standings("A").findIndex(item => item.teamId === "eight") + 1} 名` : "小组赛未开赛";
+        }
+        if (!cupQualification()) return "小组赛止步";
+        const final = getFinalMatch();
+        if (final && state.cupResults[final.id]) {
+          const result = state.cupResults[final.id];
+          return (result.homeScore > result.awayScore ? final.home : final.away) === "eight" ? "深中杯冠军" : "总决赛亚军";
+        }
+        const userSemi = getSemiMatches().find(match => match.home === "eight" || match.away === "eight");
+        if (userSemi && state.cupResults[userSemi.id]) return "半决赛出局";
+        if (getSemiMatches().length && getSemiMatches().every(match => state.cupResults[match.id])) return "晋级总决赛";
+        return "晋级四强";
+      }
+
+      function renderHome() {
+        const friendlyResults = Object.values(state.friendlyResults);
+        const friendlyWins = friendlyResults.filter(result => result.homeId === "eight" ? result.homeScore > result.awayScore : result.awayScore > result.homeScore).length;
+        $("#friendly-record").textContent = `${friendlyWins}–${friendlyResults.length - friendlyWins}`;
+        $("#friendly-played").textContent = `已赛 ${friendlyResults.length} 场`;
+        $("#friendly-points").textContent = `可分配属性点　${state.points}`;
+        const cupMatches = state.cupSchedule.filter(match => match.group === "A" && (match.home === "eight" || match.away === "eight"));
+        const cupResults = cupMatches.map(match => state.cupResults[match.id]).filter(Boolean);
+        const cupWins = cupResults.filter(result => result.homeId === "eight" ? result.homeScore > result.awayScore : result.awayScore > result.homeScore).length;
+        $("#cup-record").textContent = `${cupWins}–${cupResults.length - cupWins}`;
+        $("#cup-standing").textContent = cupUserStatus();
+        $("#cup-status").textContent = groupPhaseComplete() ? (cupQualification() ? "小组赛前两名 · 晋级四强" : "本届深中杯征程结束") : "A 组前两名晋级四强";
+        renderHomeRoster();
+        renderQuickTraining();
+        renderHomeSchedule();
+        renderCampusEvent();
+      }
+
+      function renderHomeRoster() {
+        $("#home-starter-count").textContent = `首发 ${state.starters.length} / 5`;
+        $("#home-roster").innerHTML = state.players.map((player, index) => {
+          const isStarter = state.starters.includes(player.id);
+          return `<div class="home-player-row"><div class="avatar">${String(index + 1).padStart(2, "0")}</div><div class="home-player-name">${escapeHtml(player.name)}</div><div class="home-player-rating">${playerRating(player)}</div><button class="home-starter ${isStarter ? "selected" : ""}" data-action="toggle-starter" data-player="${player.id}" aria-label="${isStarter ? "移出首发" : "设为首发"}">${isStarter ? "首发" : "替补"}</button></div>`;
+        }).join("");
+      }
+
+      function renderQuickTraining() {
+        const select = $("#home-training-player");
+        if (!state.players.some(player => player.id === state.selectedPlayer)) state.selectedPlayer = state.players[0].id;
+        select.innerHTML = state.players.map(player => `<option value="${player.id}" ${player.id === state.selectedPlayer ? "selected" : ""}>${escapeHtml(player.name)}</option>`).join("");
+        const player = playerById(state.selectedPlayer);
+        $("#home-training-points").textContent = state.points;
+        $("#home-selected-name").textContent = player.name;
+        $("#home-selected-rating").textContent = `总评 ${playerRating(player)}`;
+        $("#home-attribute-grid").innerHTML = ATTRIBUTES.map(attribute => `<div class="home-attribute"><span class="home-attribute-label">${attribute.label}</span><div class="home-attribute-control"><button class="tiny-button" data-action="train" data-attribute="${attribute.key}" data-delta="-1" ${player.attributes[attribute.key] <= 1 ? "disabled" : ""} aria-label="降低${attribute.label}">−</button><strong>${player.attributes[attribute.key]}</strong><button class="tiny-button" data-action="train" data-attribute="${attribute.key}" data-delta="1" ${state.points <= 0 || player.attributes[attribute.key] >= 99 ? "disabled" : ""} aria-label="提升${attribute.label}">＋</button></div></div>`).join("");
+      }
+
+      function renderHomeSchedule() {
+        const friendlies = state.friendlies.map(match => ({ ...match, stage: "friendly", result: state.friendlyResults[match.id] }));
+        const cupMatches = [...state.cupSchedule, ...getSemiMatches(), ...(getFinalMatch() ? [getFinalMatch()] : [])].map(match => ({ ...match, result: state.cupResults[match.id] }));
+        const matches = [...friendlies, ...cupMatches].sort((a, b) => a.date.localeCompare(b.date));
+        const nextFriendly = getNextFriendly();
+        const nextCup = cupMatchForUser();
+        const featured = nextFriendly
+          ? { ...nextFriendly, stage: "friendly", type: "友谊赛", opponent: teamName(nextFriendly.teamId), action: "play-friendly" }
+          : nextCup
+            ? { ...nextCup, type: nextCup.stage === "group" ? "深中杯 · 小组赛" : nextCup.stage === "semi" ? "深中杯 · 半决赛" : "深中杯 · 总决赛", opponent: teamName(nextCup.home === "eight" ? nextCup.away : nextCup.home), action: "play-cup" }
+            : null;
+        $("#next-match-card").innerHTML = featured
+          ? `<div class="schedule-feature"><div class="schedule-feature-copy"><div class="schedule-feature-kicker">NEXT GAME · ${escapeHtml(featured.type)}</div><div class="schedule-feature-title">八单 <span style="color:#d1e2c8;font-size:13px">VS</span> ${escapeHtml(featured.opponent)}</div><div class="schedule-feature-meta">${formatDate(featured.date, true)}　·　赛前确认首发</div></div><button class="hero-button" data-action="${featured.action}" data-match="${featured.id}">开始比赛　→</button></div>`
+          : `<div class="schedule-feature"><div class="schedule-feature-copy"><div class="schedule-feature-kicker">SEASON COMPLETE</div><div class="schedule-feature-title">${escapeHtml(cupUserStatus())}</div><div class="schedule-feature-meta">本赛季八单可参加的比赛已结束</div></div><button class="hero-button" data-view="logs">赛季档案　→</button></div>`;
+        $("#home-schedule").innerHTML = matches.map(match => {
+          const isFriendly = match.stage === "friendly";
+          const isNext = isFriendly && nextFriendly?.id === match.id;
+          const isActiveCup = !isFriendly && nextCup?.id === match.id;
+          const homeName = isFriendly ? "八单" : teamName(match.home);
+          const awayName = isFriendly ? teamName(match.teamId) : teamName(match.away);
+          const type = isFriendly
+            ? `友谊赛 · 对手攻 ${state.opponentTactics.friendly[match.teamId].offense} / 守 ${state.opponentTactics.friendly[match.teamId].defense}`
+            : match.stage === "group" ? `${match.group} 组 · 第 ${match.round} 轮` : match.stage === "semi" ? "深中杯 · 半决赛" : "深中杯 · 总决赛";
+          const result = match.result;
+          const resultButton = result ? `<button class="small-button" data-action="open-log" data-log="${escapeHtml(result.logId || "")}">比赛数据</button>` : isNext || isActiveCup ? `<button class="small-button" data-action="${isFriendly ? "play-friendly" : "play-cup"}" data-match="${match.id}">开赛</button>` : `<button class="small-button" disabled>${!isFriendly && !friendliesComplete() ? "赛程未解锁" : "等待前序"}</button>`;
+          const score = result ? `<span class="home-schedule-result">${result.homeScore} : ${result.awayScore}</span>` : `<span class="home-schedule-result">${isNext || isActiveCup ? "待开赛" : "—"}</span>`;
+          return `<div class="home-schedule-row"><div class="home-schedule-date">${isFriendly ? "热身赛" : match.stage === "group" ? `第 ${match.round} 轮` : match.stage === "semi" ? "半决赛" : "总决赛"}<strong>${formatDate(match.date, true)}</strong></div><div class="home-schedule-match">${escapeHtml(homeName)} vs ${escapeHtml(awayName)}<div class="home-schedule-type">${type}</div></div>${score}${resultButton}</div>`;
+        }).join("") || `<div class="schedule-empty">暂无待显示赛程</div>`;
+      }
+
+      function renderCampusEvent() {
+        const event = state.pendingEvent;
+        if (!event) {
+          $("#campus-event").innerHTML = `<div class="event-panel-head"><strong>校园随机事件</strong><span>球队日常</span></div><div class="event-body"><div class="event-notice">${escapeHtml(state.lastEventOutcome || "处理好球队日常后，下一场比赛结束时会出现新的校园事件。")}</div></div>`;
+          return;
+        }
+        const player = playerById(event.playerId);
+        const options = event.options.map((option, index) => {
+          const changes = option.changes.map(change => `${ATTRIBUTES.find(attribute => attribute.key === change.key)?.label || change.key} ${change.amount > 0 ? "+" : ""}${change.amount}`).join(" · ");
+          return `<button class="event-option" data-action="resolve-campus-event" data-choice="${index}">${escapeHtml(option.label)}<br><small>${escapeHtml(changes)}</small></button>`;
+        }).join("");
+        $("#campus-event").innerHTML = `<div class="event-panel-head"><strong>校园随机事件</strong><span>需要经理决定</span></div><div class="event-body"><div class="event-title">${escapeHtml(event.title)}</div><div class="event-description">${escapeHtml(event.description)}<br><span class="event-player">涉及球员：${escapeHtml(player?.name || "队员")}</span></div><div class="event-options">${options}</div></div>`;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      }
+
+      function renderRoster() {
+        $("#starter-count").textContent = `首发 ${state.starters.length} / 5`;
+        $("#roster-body").innerHTML = state.players.map((player, index) => {
+          const isStarter = state.starters.includes(player.id);
+          const offense = playerRating(player, ["three", "mid", "finish"]);
+          const defense = playerRating(player, ["perimeter", "interior", "rebound"]);
+          const base = playerRating(player, ["stamina", "strength", "speed", "handling"]);
+          return `<tr><td><button class="starter-toggle ${isStarter ? "selected" : ""}" data-action="toggle-starter" data-player="${player.id}" aria-label="${isStarter ? "移出" : "设为"}首发">${isStarter ? "✓" : "＋"}</button></td><td><div class="player-cell"><div class="avatar">${String(index + 1).padStart(2, "0")}</div><div><strong>${escapeHtml(player.name)}</strong><div class="jersey">球衣 ${String(index + 4).padStart(2, "0")}</div></div></div></td><td>${player.age} 岁</td><td>${offense}</td><td>${defense}</td><td>${base}</td><td class="overall">${playerRating(player)}</td></tr>`;
+        }).join("");
+      }
+
+      function renderTraining() {
+        const select = $("#training-player");
+        if (!state.players.some(player => player.id === state.selectedPlayer)) state.selectedPlayer = state.players[0].id;
+        select.innerHTML = state.players.map(player => `<option value="${player.id}" ${player.id === state.selectedPlayer ? "selected" : ""}>${escapeHtml(player.name)}</option>`).join("");
+        select.value = state.selectedPlayer;
+        $("#home-training-player").value = state.selectedPlayer;
+        $("#training-points").textContent = state.points;
+        const player = playerById(state.selectedPlayer);
+        $("#attribute-grid").innerHTML = ["进攻", "防守", "基本盘"].map(group => `<div class="attribute-card"><h3>${group}</h3>${ATTRIBUTES.filter(attribute => attribute.group === group).map(attribute => `<div class="attribute-item"><span>${attribute.label}</span><div class="attribute-control"><button class="tiny-button" data-action="train" data-attribute="${attribute.key}" data-delta="-1" ${player.attributes[attribute.key] <= 1 ? "disabled" : ""} aria-label="降低${attribute.label}">−</button><strong>${player.attributes[attribute.key]}</strong><button class="tiny-button" data-action="train" data-attribute="${attribute.key}" data-delta="1" ${state.points <= 0 || player.attributes[attribute.key] >= 99 ? "disabled" : ""} aria-label="提升${attribute.label}">＋</button></div></div>`).join("")}</div>`).join("");
+      }
+
+      function renderFriendlies() {
+        const matches = state.friendlies;
+        const played = matches.filter(match => state.friendlyResults[match.id]).length;
+        $("#friendly-progress").textContent = `已完成 ${played} / 7`;
+        $("#friendly-list").innerHTML = matches.map((match, index) => {
+          const result = state.friendlyResults[match.id];
+          const isNext = !result && matches.find(item => !state.friendlyResults[item.id])?.id === match.id;
+            const opponentTactics = state.opponentTactics.friendly[match.teamId];
+          const resultLabel = result ? `八单${result.homeScore > result.awayScore ? "获胜" : "惜败"} · ${result.attributeReward ? `+${result.attributeReward.total} 点` : "历史赛果"}` : isNext ? "下一场比赛" : "等待前序赛程";
+          return `<div class="schedule-row"><div class="schedule-day">第 ${String(index + 1).padStart(2, "0")} 场<strong>${formatDate(match.date, true)}</strong></div><div class="schedule-teams">八单 <span class="versus">VS</span> ${escapeHtml(teamName(match.teamId))}<div class="home-schedule-type">对手战术：攻 ${escapeHtml(opponentTactics.offense)} · 守 ${escapeHtml(opponentTactics.defense)}</div></div><div class="schedule-status">${resultLabel}</div>${result ? `<button class="small-button" data-action="open-log" data-log="${escapeHtml(result.logId)}">${result.homeScore} : ${result.awayScore}　数据</button>` : `<button class="small-button" data-action="play-friendly" data-match="${match.id}" ${isNext ? "" : "disabled"}>${isNext ? "开始比赛" : "未解锁"}</button>`}</div>`;
+        }).join("");
+      }
+
+      function standingsTable(group, compact = false) {
+        const rows = standings(group);
+        return `<div class="table-scroll"><table class="standings"><thead><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>负</th><th>净胜分</th></tr></thead><tbody>${rows.map((row, index) => `<tr class="${index < 2 ? "qualified-row" : ""}"><td>${index + 1}</td><td>${escapeHtml(row.name)}${row.teamId === "eight" ? " <strong>·</strong>" : ""}</td><td>${row.played}</td><td>${row.wins}</td><td>${row.losses}</td><td>${row.pointsFor - row.pointsAgainst > 0 ? "+" : ""}${row.pointsFor - row.pointsAgainst}</td></tr>`).join("")}</tbody></table></div>`;
+      }
+
+      function renderCup() {
+        $("#group-tables").innerHTML = ["A", "B"].map(group => `<div class="panel group-panel"><div class="group-title"><strong>${group} 组积分榜</strong><span>前两名晋级</span></div>${standingsTable(group, true)}</div>`).join("");
+        const matches = [...state.cupSchedule];
+        if (groupPhaseComplete()) matches.push(...getSemiMatches());
+        const final = getFinalMatch();
+        if (final) matches.push(final);
+        const phase = !groupPhaseComplete() ? "小组赛" : !cupQualification() ? "小组赛结束" : final && state.cupResults[final.id] ? "赛事结束" : getSemiMatches().some(match => state.cupResults[match.id]) ? "淘汰赛" : "四强赛";
+        $("#cup-phase").textContent = phase;
+        const grouped = [
+          { title: "小组循环赛", records: matches.filter(match => match.stage === "group") },
+          { title: "半决赛 · 交叉对阵", records: matches.filter(match => match.stage === "semi") },
+          { title: "总决赛", records: matches.filter(match => match.stage === "final") }
+        ].filter(section => section.records.length);
+        $("#cup-schedule").innerHTML = grouped.map(section => `<div class="round-title">${section.title}</div><div class="panel"><div class="schedule-list">${section.records.map(match => cupScheduleRow(match)).join("")}</div></div>`).join("");
+      }
+
+      function cupScheduleRow(match) {
+        const result = state.cupResults[match.id];
+        const userMatch = match.home === "eight" || match.away === "eight";
+        let enabled = false;
+        let buttonLabel = "待进行";
+        if (match.stage === "group") {
+          const firstPendingRound = [1, 2, 3].find(round => !getCupRoundStatus(round));
+          enabled = friendliesComplete() && userMatch && match.round === firstPendingRound;
+          buttonLabel = !friendliesComplete() ? "完成友谊赛后解锁" : userMatch ? (enabled ? `模拟第 ${match.round} 轮` : "等待本轮") : "同轮赛果自动生成";
+        } else if (match.stage === "semi") {
+          const userSemi = getSemiMatches().find(item => item.home === "eight" || item.away === "eight");
+          enabled = Boolean(userSemi && userSemi.id === match.id && getSemiMatches().some(item => !state.cupResults[item.id]));
+          buttonLabel = userMatch ? (enabled ? "模拟半决赛" : "等待四强赛") : "本轮自动生成";
+        } else {
+          const final = getFinalMatch();
+          enabled = Boolean(userMatch && final && final.id === match.id && !result);
+          buttonLabel = userMatch ? (enabled ? "争夺冠军" : "等待决赛") : "赛程待定";
+        }
+        const date = match.date;
+        const homeName = match.home ? teamName(match.home) : "待定";
+        const awayName = match.away ? teamName(match.away) : "待定";
+        const opponentId = userMatch ? (match.home === "eight" ? match.away : match.home) : null;
+        const opponentTactics = opponentId ? state.opponentTactics.cup[opponentId] : null;
+        const tacticLine = opponentTactics ? `<div class="home-schedule-type">对手战术：攻 ${escapeHtml(opponentTactics.offense)} · 守 ${escapeHtml(opponentTactics.defense)}</div>` : "";
+        return `<div class="schedule-row"><div class="schedule-day">${match.stage === "group" ? `第 ${match.round} 轮` : match.stage === "semi" ? "半决赛" : "冠军争夺"}<strong>${formatDate(date, true)}</strong></div><div class="schedule-teams">${escapeHtml(homeName)} <span class="versus">VS</span> ${escapeHtml(awayName)}${tacticLine}</div><div class="schedule-status">${result ? (result.homeScore > result.awayScore ? `${escapeHtml(homeName)} 获胜` : `${escapeHtml(awayName)} 获胜`) : userMatch ? "八单出战" : ""}</div>${result ? `<button class="small-button" data-action="open-log" data-log="${escapeHtml(result.logId)}">${result.homeScore} : ${result.awayScore}　数据</button>` : `<button class="small-button" data-action="play-cup" data-match="${match.id}" ${enabled ? "" : "disabled"}>${buttonLabel}</button>`}</div>`;
+      }
+
+      function renderLogs() {
+        $("#log-count").textContent = `${state.logs.length} 场`;
+        $("#log-list").innerHTML = state.logs.length ? state.logs.map(log => `<div class="log-row"><div class="log-date">${formatDate(log.date, true)}</div><div class="log-game">${escapeHtml(log.homeName)} vs ${escapeHtml(log.awayName)}<small>${escapeHtml(log.competition)}</small></div><div class="log-score">${log.homeScore} : ${log.awayScore}</div><button class="small-button" data-action="open-log" data-log="${escapeHtml(log.id)}">比赛数据</button></div>`).join("") : `<div class="log-empty">还没有比赛记录。完成第一场比赛后，赛况和球员数据会显示在这里。</div>`;
+      }
+
+      function startFriendly(matchId) {
+        if (!requireLineup()) return;
+        const match = state.friendlies.find(item => item.id === matchId);
+        if (!match || getNextFriendly()?.id !== match.id) return;
+        const result = simulateMatch("eight", match.teamId, true);
+        result.attributeReward = friendlyPointReward(result);
+        const log = resultRecord(result, { id: match.id, date: match.date, competition: "友谊赛", homeId: "eight", awayId: match.teamId, homeName: "八单", awayName: teamName(match.teamId), isUserMatch: true });
+        result.logId = log.id;
+        result.homeId = "eight";
+        state.friendlyResults[match.id] = result;
+        state.points += result.attributeReward.total;
+        if (!state.pendingEvent) state.pendingEvent = createCampusEvent(state.players);
+        state.lastEventOutcome = "";
+        persist();
+        render();
+        openMatch(log);
+      }
+
+      function simulateCupMatch(match) {
+        const result = simulateMatch(match.home, match.away, false);
+        const competition = match.stage === "group" ? `深中杯 · ${match.group} 组第 ${match.round} 轮` : match.stage === "semi" ? "深中杯 · 半决赛" : "深中杯 · 总决赛";
+        const log = resultRecord(result, { id: match.id, date: match.date, competition, homeId: match.home, awayId: match.away, homeName: teamName(match.home), awayName: teamName(match.away), isUserMatch: match.home === "eight" || match.away === "eight" });
+        result.logId = log.id;
+        result.homeId = match.home;
+        state.cupResults[match.id] = result;
+        return log;
+      }
+
+      function startCup(matchId) {
+        if (!requireLineup()) return;
+        const match = [...state.cupSchedule, ...getSemiMatches(), ...(getFinalMatch() ? [getFinalMatch()] : [])].find(item => item.id === matchId);
+        if (!match) return;
+        const logs = [];
+        if (match.stage === "group") {
+          if (cupMatchForUser()?.round !== match.round) return;
+          getCupRound(match.round).filter(item => !state.cupResults[item.id]).forEach(item => logs.push(simulateCupMatch(item)));
+        } else if (match.stage === "semi") {
+          if (!getSemiMatches().some(item => item.id === match.id && (item.home === "eight" || item.away === "eight"))) return;
+          getSemiMatches().filter(item => !state.cupResults[item.id]).forEach(item => logs.push(simulateCupMatch(item)));
+        } else {
+          const final = getFinalMatch();
+          if (!final || final.id !== match.id || !(final.home === "eight" || final.away === "eight")) return;
+          logs.push(simulateCupMatch(final));
+        }
+        if (!state.pendingEvent) state.pendingEvent = createCampusEvent(state.players);
+        state.lastEventOutcome = "";
+        persist();
+        render();
+        const userLog = logs.find(log => log.isUserMatch) || logs[0];
+        if (userLog) openMatch(userLog);
+      }
+
+      function statTable(stats, title) {
+        return `<div class="box-heading">${title}</div><div class="table-scroll"><table class="box-table"><thead><tr><th>球员</th><th>时间</th><th>得分</th><th>篮板</th><th>助攻</th><th>抢断</th><th>盖帽</th><th>失误</th></tr></thead><tbody>${stats.map(player => `<tr><td>${escapeHtml(player.name)}</td><td>${player.minutes}′</td><td><strong>${player.points}</strong></td><td>${player.rebounds}</td><td>${player.assists}</td><td>${player.steals}</td><td>${player.blocks}</td><td>${player.turnovers}</td></tr>`).join("")}</tbody></table></div>`;
+      }
+
+      function openMatch(log) {
+        const tacticSummary = log.tactics ? `<div class="match-tactics"><div><strong>${escapeHtml(log.homeName)}</strong><span>攻 ${escapeHtml(log.tactics.home.offense)} · 守 ${escapeHtml(log.tactics.home.defense)}</span><small>${log.tactics.home.offenseSuccess ? "进攻克制成功" : "进攻未形成克制"} · ${log.tactics.home.defenseSuccess ? "防守克制成功" : "防守未形成克制"}</small></div><div><strong>${escapeHtml(log.awayName)}</strong><span>攻 ${escapeHtml(log.tactics.away.offense)} · 守 ${escapeHtml(log.tactics.away.defense)}</span><small>${log.tactics.away.offenseSuccess ? "进攻克制成功" : "进攻未形成克制"} · ${log.tactics.away.defenseSuccess ? "防守克制成功" : "防守未形成克制"}</small></div></div>` : "";
+        const rewardSummary = log.attributeReward ? `<div class="tactic-reward-summary">八单属性点 +${log.attributeReward.total}　·　胜负基础 +${log.attributeReward.base}　·　进攻适配 +${log.attributeReward.offenseBonus}　·　防守适配 +${log.attributeReward.defenseBonus}</div>` : "";
+        $("#dialog-content").innerHTML = `<div class="dialog-head"><div><div class="dialog-kicker">${escapeHtml(log.competition)}　·　${formatDate(log.date, true)}</div><div class="dialog-title" id="dialog-title">终场哨响</div><div class="dialog-sub">${escapeHtml(log.homeName)} 对阵 ${escapeHtml(log.awayName)}</div></div><button class="close-button" data-action="close-dialog" aria-label="关闭">×</button></div><div class="scoreboard"><div class="score-team"><div class="score-team-name">${escapeHtml(log.homeName)}</div><div class="score-number">${log.homeScore}</div></div><div class="score-divider">终场</div><div class="score-team"><div class="score-team-name">${escapeHtml(log.awayName)}</div><div class="score-number">${log.awayScore}</div></div></div><div class="story-line">${escapeHtml(log.story)}</div>${tacticSummary}${rewardSummary}${statTable(log.homeStats, `${escapeHtml(log.homeName)} · 球员数据`)}${statTable(log.awayStats, `${escapeHtml(log.awayName)} · 球员数据`)}`;
+        if (!dialog.open) dialog.showModal();
+      }
+
+      function openLog(logId) {
+        const log = state.logs.find(item => item.id === logId);
+        if (log) openMatch(log);
+      }
+
+      function changeStarter(playerId) {
+        if (state.starters.includes(playerId)) {
+          if (state.starters.length <= 4) { showToast("至少保留 4 名首发，才能完成轮换调整。"); return; }
+          state.starters = state.starters.filter(id => id !== playerId);
+        } else {
+          if (state.starters.length >= 5) { showToast("首发名额已满，请先移出一名球员。"); return; }
+          state.starters.push(playerId);
+        }
+        persist(); render();
+      }
+
+      function resolveCampusEvent(choiceIndex) {
+        const event = state.pendingEvent;
+        const player = event && playerById(event.playerId);
+        const option = event?.options[choiceIndex];
+        if (!player || !option) return;
+        option.changes.forEach(change => {
+          player.attributes[change.key] = Math.max(1, Math.min(99, player.attributes[change.key] + change.amount));
+        });
+        const summary = option.changes.map(change => `${ATTRIBUTES.find(attribute => attribute.key === change.key)?.label || change.key} ${change.amount > 0 ? "+" : ""}${change.amount}`).join("、");
+        state.lastEventOutcome = `${player.name}：${option.outcome}（${summary}）。下一场比赛后会有新的随机事件。`;
+        state.pendingEvent = null;
+        persist();
+        render();
+        showToast("事件已处理，球员属性已更新。");
+      }
+
+      function requireLineup() {
+        if (state.starters.length === 5) return true;
+        showToast("请先在阵容管理中选满 5 名首发球员。");
+        navigate("roster");
+        return false;
+      }
+
+      function train(attributeKey, delta) {
+        const player = playerById(state.selectedPlayer);
+        if (!player) return;
+        if (delta > 0) {
+          if (state.points <= 0 || player.attributes[attributeKey] >= 99) return;
+          player.attributes[attributeKey]++;
+          state.points--;
+        } else {
+          if (player.attributes[attributeKey] <= 1) return;
+          player.attributes[attributeKey]--;
+          state.points++;
+        }
+        persist(); render();
+      }
+
+      document.addEventListener("click", event => {
+        const viewButton = event.target.closest("[data-view]");
+        if (viewButton) { navigate(viewButton.dataset.view); return; }
+        const button = event.target.closest("[data-action]");
+        if (!button) return;
+        switch (button.dataset.action) {
+          case "go-next": {
+            const next = getNextFriendly();
+            if (next) navigate("friendlies");
+            else navigate("cup");
+            break;
+          }
+          case "toggle-starter": changeStarter(button.dataset.player); break;
+          case "train": train(button.dataset.attribute, Number(button.dataset.delta)); break;
+          case "play-friendly": startFriendly(button.dataset.match); break;
+          case "play-cup": startCup(button.dataset.match); break;
+          case "open-log": openLog(button.dataset.log); break;
+          case "resolve-campus-event": resolveCampusEvent(Number(button.dataset.choice)); break;
+          case "set-tactic-mode":
+            if (["friendly", "cup"].includes(button.dataset.mode)) {
+              activeTacticMode = button.dataset.mode;
+              renderTactics();
+            }
+            break;
+          case "close-dialog": dialog.close(); break;
+        }
+      });
+
+      function selectTrainingPlayer(event) {
+        state.selectedPlayer = event.target.value;
+        persist(); render();
+      }
+      $("#training-player").addEventListener("change", selectTrainingPlayer);
+      $("#home-training-player").addEventListener("change", selectTrainingPlayer);
+      $("#offense-tactic").addEventListener("change", event => updateTactic("offense", event.target.value));
+      $("#defense-tactic").addEventListener("change", event => updateTactic("defense", event.target.value));
+      dialog.addEventListener("click", event => {
+        if (event.target === dialog) dialog.close();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
